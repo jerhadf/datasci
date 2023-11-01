@@ -21,22 +21,22 @@ def __(mo):
 @app.cell
 def search(mo):
     # Add a label and a text input widget for regular search
-    regular_search_label = mo.md("## Keyword Search: Find a company by keyword ")
+    regular_search_label = mo.md("## Keyword Search\nFind a company using a keyword")
     regular_search_label
-    return regular_search_label,
+    return (regular_search_label,)
 
 
 @app.cell
 def __(mo):
     search_box = mo.ui.text(value="")
     search_box
-    return search_box,
+    return (search_box,)
 
 
 @app.cell
 def initial_analysis(mo, pd, search_box):
     # Load the csv file
-    df = pd.read_csv("entrepreneur1st/portcos.csv")
+    df = pd.read_csv("portcos.csv")
 
     if search_box == "":
         df
@@ -57,35 +57,41 @@ def initial_analysis(mo, pd, search_box):
 @app.cell
 def __(mo):
     # Add a label and a text input widget for semantic search
-    semantic_search_label = mo.md("## Semantic Search")
+    semantic_search_label = mo.md(
+        "## Semantic Search\n Just describe a company or a concept in natural language!"
+    )
     semantic_search_label
-    return semantic_search_label,
+    return (semantic_search_label,)
 
 
 @app.cell
 def __(mo):
     semantic_search_box = mo.ui.text(value="")
     semantic_search_box
-    return semantic_search_box,
+    return (semantic_search_box,)
 
 
 @app.cell
 def __(cosine_similarity, df, embeddings_model, np, semantic_search_box):
     # Implement semantic search over the company summaries
     _df = df.copy()
-    _df['combined_text'] = _df[['Company Name', 'Summary', 'Category1', 'Category2', 'Category3']].apply(lambda row: ' '.join(row.values.astype(str)), axis=1)
+    _df["combined_text"] = _df[
+        ["Company Name", "Summary", "Category1", "Category2", "Category3"]
+    ].apply(lambda row: " ".join(row.values.astype(str)), axis=1)
 
     # Apply the embeddings model to the 'combined_text' column
-    _df['summary_embeddings'] = embeddings_model.embed_documents(_df['combined_text'].tolist())
+    _df["summary_embeddings"] = embeddings_model.embed_documents(
+        _df["combined_text"].tolist()
+    )
 
-    # Get the query from the text, embed the documents given the query 
+    # Get the query from the text, embed the documents given the query
     query = semantic_search_box.value
     query_embedding = embeddings_model.embed_documents([query])
 
     # Calculate similarity
     similarity_scores = cosine_similarity(
-        np.array(_df["summary_embeddings"].tolist()), 
-        np.array(query_embedding).reshape(1, -1)
+        np.array(_df["summary_embeddings"].tolist()),
+        np.array(query_embedding).reshape(1, -1),
     )
 
     # Rank companies
@@ -95,8 +101,8 @@ def __(cosine_similarity, df, embeddings_model, np, semantic_search_box):
     # Return top 'num_companies' results
     _num_companies = 5
     top_companies = _df_sorted.head(_num_companies)
-    # drop summary embeddings and combined text at the end 
-    top_companies = top_companies.drop(columns=['summary_embeddings', 'combined_text'])
+    # drop summary embeddings and combined text at the end
+    top_companies = top_companies.drop(columns=["summary_embeddings", "combined_text"])
     top_companies
     return query, query_embedding, similarity_scores, top_companies
 
@@ -136,20 +142,24 @@ def load_and_display_data(alt, df, mo):
 @app.cell
 def __(alt, df, mo):
     # Melt the dataframe to create a company-category pair for each category
-    _df_melted = df.melt(id_vars="Company Name", value_vars=["Category1", "Category2", "Category3"])
+    _df_melted = df.melt(
+        id_vars="Company Name", value_vars=["Category1", "Category2", "Category3"]
+    )
 
     # Create the pie chart
-    _chart = alt.Chart(_df_melted).mark_arc(innerRadius=50).encode(
-        alt.Theta('count()', stack=True),
-        alt.Color('value:N', legend=alt.Legend(title="Category"))
-    ).properties(
-        width=400,
-        height=400
+    _chart = (
+        alt.Chart(_df_melted)
+        .mark_arc(innerRadius=50)
+        .encode(
+            alt.Theta("count()", stack=True),
+            alt.Color("value:N", legend=alt.Legend(title="Category")),
+        )
+        .properties(width=400, height=400)
     )
 
     piechart = mo.ui.altair_chart(_chart)
     piechart
-    return piechart,
+    return (piechart,)
 
 
 @app.cell
@@ -203,7 +213,7 @@ def visualize_embeddings(TSNE, alt, df, embeddings_model, mo, np, os):
 
 @app.cell
 def __(KMeans, TSNE, df, embeddings_array, px):
-    # copy dataframe 
+    # copy dataframe
     _df = df.copy()
     # Reduce the dimensionality of the embeddings to 3D
     _tsne = TSNE(n_components=3)
@@ -239,10 +249,10 @@ def __(KMeans, TSNE, df, embeddings_array, px):
 @app.cell
 def imports():
     import os
+
     OAI_API_KEY = os.environ["OPENAI_API_KEY"]
 
     import altair as alt
-    import marimo as mo
     import matplotlib.pyplot as plt
     import numpy as np
     import pandas as pd
@@ -254,8 +264,10 @@ def imports():
     from sklearn.metrics.pairwise import cosine_similarity
     from sklearn.neighbors import NearestNeighbors
     from transformers import pipeline
+
     embeddings_model = OpenAIEmbeddings(openai_api_key=OAI_API_KEY)
     import marimo as mo
+
     return (
         KMeans,
         NearestNeighbors,
