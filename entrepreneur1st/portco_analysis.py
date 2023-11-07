@@ -80,6 +80,8 @@ def __(cosine_similarity, df, embeddings_model, np, semantic_search_box):
     ].apply(lambda row: " ".join(row.values.astype(str)), axis=1)
 
     # Apply the embeddings model to the 'combined_text' column
+    #! this results in an openaai call
+    # use the glove vectors embeddings model
     _df["summary_embeddings"] = embeddings_model.embed_documents(
         _df["combined_text"].tolist()
     )
